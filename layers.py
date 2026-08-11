@@ -33,8 +33,12 @@ class Level:
         return int(self.name.split("_")[1])
 
 
-# The map product only reports the 0_X combined bands the boss asked for.
+# Verbatim with the GCOS / OHCA-OHU tables (the third copy). `--levels` picks the subset a run emits.
 LEVELS = [
+    Level("0_300", (
+        Contributor("15_20", 3, 5),
+        Contributor("15_300", 1, 285),
+    )),
     Level("0_700", (
         Contributor("15_20", 3, 5),
         Contributor("15_300", 1, 285),
@@ -45,6 +49,10 @@ LEVELS = [
         Contributor("15_300", 1, 285),
         Contributor("300_700", 1, 400),
         Contributor("700_1000", 1, 300),
+    )),
+    Level("700_2000", (
+        Contributor("700_1850", 1, 1150),
+        Contributor("1800_1850", 3, 50),
     )),
     Level("0_2000", (
         Contributor("15_20", 3, 5),

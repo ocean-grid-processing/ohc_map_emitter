@@ -42,10 +42,19 @@ the GCOS file uses for areas/volumes.
 ## Combined layers (config)
 
 [`layers.py`](layers.py) — same table as the other emitters (the third copy; see the note there).
-Only `n_fac` and the contributor tags are used (a map has no volume, so `dz` is ignored). Current:
-`0_700`, `0_1000`, `0_2000`. `--levels` selects a subset.
+Only `n_fac` and the contributor tags are used (a map has no volume, so `dz` is ignored). Bands:
+`0_300`, `0_700`, `0_1000`, `700_2000`, `0_2000`. `--levels` selects a subset.
 
 ## Usage
+
+### Test
+
+Basic unit tests run locally in a container:
+   
+```bash
+docker image build -t ohc_map_emitter:test .
+docker container run -v $(pwd):/app ohc_map_emitter:test pytest
+```
 
 ### Run
 ```bash
