@@ -63,6 +63,23 @@ python combine.py OHC_*.nc --tag "OHC-maps 2026 <run>" [--levels ...] [--out DIR
 The `OHC_*.nc` are publish submissions built with `--preset wmo --ensemble`; the `OHCENS_` siblings
 must sit beside them for the spread.
 
+## Validation
+
+The gridded map has no Zenodo reference of its own, but it ties back to one that does. The map's
+per-cell referencing is the same whole-record-mean removal as the OHCA emitter's `integral_anom`
+(validated against Zenodo 14720478), applied before the integral instead of after. Demeaning and the
+area integral commute, so **area-weighting the map and annualizing must reproduce the OHCA file's
+`ohca` series**:
+
+```bash
+python postflight_integral_check.py --map ohca_map_*.nc --ohca ohca_ohu_*.nc
+```
+
+It regenerates cell area with derive's exact formula, integrates each map, takes the calendar-year
+mean, divides by the OHCA file's own `area_m2`, and diffs against `ohca` per level and year (expect
+machine-zero). A real gap means the two products drifted — different layers/`n_fac`, mask, grid, or
+time base — and the per-year table localizes it.
+
 ## Memory
 
 The spread materializes the combined `(member, time, lat, lon)` cube — ~7–14 GB per level (f32/f64).
