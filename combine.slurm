@@ -16,4 +16,6 @@ module load anaconda/2023.09
 conda activate ohc_crosscheck
 
 cd $SLURM_SUBMIT_DIR
-python combine.py ${1}/OHC_*.nc --tag "ohc_prod_2601810" --levels 0_300,0_700,0_1000,700_2000,0_2000 --out ${1}
+python combine.py /scratch/alpine/wimi7695/ohc_prod/results/OHC_*.nc --out /scratch/alpine/wimi7695/ohc_prod/results/ \
+  --tag $1 --provenance-link https://github.com/argovis/ohc_map_emitter/blob/main/provenance/README.md \
+  --levels 0_300,0_700,0_1000,700_2000,0_2000
