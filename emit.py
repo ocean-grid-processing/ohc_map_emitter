@@ -38,4 +38,5 @@ def build_level_dataset(cl, tag, collaborators):
 
 
 def filename(cl, tag):
-    return "ohca_map_%d_%d_dbar_%s.nc" % (cl["low"], cl["high"], tag.lower().replace(" ", ""))
+    # `tag` is already whitespace-sanitized by the CLI; used verbatim (no lowercasing/munging).
+    return "ohca_map_%d_%d_dbar_%s.nc" % (cl["low"], cl["high"], tag)

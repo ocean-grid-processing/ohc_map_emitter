@@ -58,10 +58,13 @@ docker container run -v $(pwd):/app ohc_map_emitter:test pytest
 
 ### Run
 ```bash
-python combine.py OHC_*.nc --tag "OHC-maps 2026 <run>" [--levels ...] [--out DIR]
+python combine.py OHC_*.nc --tag OHC-maps-2026-<run> [--provenance-link URL] [--levels ...] [--out DIR]
 ```
 The `OHC_*.nc` are publish submissions built with `--preset wmo --ensemble`; the `OHCENS_` siblings
-must sit beside them for the spread.
+must sit beside them for the spread. `--tag` (required) is whitespace-stripped (case preserved, no
+other munging) into each per-level filename and written to the `provenance_tag` header attr;
+`--provenance-link` (optional) becomes the `provenance_link` attr — both pointers to the run's
+provenance record, so the tag must match that record char-for-char.
 
 ## Validation
 

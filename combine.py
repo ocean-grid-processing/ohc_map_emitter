@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Combine mapped-layer gridded OHC (publish OHC_/OHCENS_ output) into combined-layer anomaly maps.
 
-    python combine.py OHC_*.nc --tag "OHC-maps 2026 OP20260127b" \
+    python combine.py OHC_*.nc --tag "OHC-maps-2026-OP20260127b" \
         [--levels 0_700,0_1000,0_2000] [--collaborators STR] [--out DIR]
 
 Each OHC_*.nc is one mapped layer's publish submission; the OHCENS_ sibling (from
@@ -19,10 +19,15 @@ import aggregate
 import emit
 
 
+def _sanitize_tag(tag):
+    """Strip all whitespace from a provenance tag; never lowercase or otherwise munge it — it must
+    match the provenance record char-for-char."""
+    return "".join(tag.split())
+
+
 def _add_provenance(ds, args):
-    """Stamp provenance attrs onto an output header when supplied (which localGP run + git hashes)."""
-    if args.provenance_tag is not None:
-        ds.attrs["provenance_tag"] = args.provenance_tag
+    """Stamp provenance attrs: provenance_tag is the required --tag (also the filename run token)."""
+    ds.attrs["provenance_tag"] = args.tag
     if args.provenance_link is not None:
         ds.attrs["provenance_link"] = args.provenance_link
 
@@ -30,17 +35,15 @@ def _add_provenance(ds, args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("submissions", nargs="+", help="OHC_ submissions, one per mapped layer")
-    ap.add_argument("--tag", required=True, help='run tag, e.g. "OHC-maps 2026 OP20260127b"')
+    ap.add_argument("--tag", required=True, help='run tag, e.g. "OHC-maps-2026-OP20260127b"')
     ap.add_argument("--levels", default=None,
                     help="comma list of combined levels to emit (default: all in layers.py)")
     ap.add_argument("--collaborators", default="LocalGP by Giglio, Sukianto, Kuusela, Mills")
-    ap.add_argument("--provenance-tag", default=None,
-                    help="provenance id written to the header (e.g. the localGP run + component "
-                         "git hashes)")
     ap.add_argument("--provenance-link", default=None,
-                    help="URL/path to the provenance record for this output")
+                    help="URL/path to the provenance record; written to the provenance_link header attr")
     ap.add_argument("--out", default=".")
     args = ap.parse_args()
+    args.tag = _sanitize_tag(args.tag)
 
     names = None if not args.levels else [s.strip() for s in args.levels.split(",")]
     levels = layers_mod.select_levels(names)
