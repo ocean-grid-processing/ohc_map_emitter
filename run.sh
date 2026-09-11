@@ -1,5 +1,7 @@
-for level in 15_20 15_300 300_700 700_1000 700_1850 1800_1850
+for window in 2005_2024 2005_2025
 do
-    dir=/scratch/alpine/wimi7695/ohc_prod/potential_temperature/OP20260507
-    sbatch combine.slurm ${dir}
+  for level in 0_300 0_700 0_1000 0_2000 700_2000
+  do
+    sbatch emit.slurm $window $level
+  done
 done
