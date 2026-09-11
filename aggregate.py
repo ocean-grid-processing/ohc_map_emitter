@@ -14,15 +14,30 @@ is on). Combination is the shallowest-first `n_fac` sum, on the grid, with the a
     then NaN where EVERY contributor is NaN (so all-missing cells don't read as 0).
 
 This mirrors the series combine's skipna sum and lands on the GCOS area/volume footprint, with no
-shallowest-reference policy. The **anomaly** subtracts each cell's whole-record mean; the **spread**
-is the ensemble std of the ABSOLUTE combined field (offset included, matching the OHCA emitter's
-data_yearly_std choice), not of the demeaned anomaly.
+shallowest-reference policy. The **anomaly** subtracts each cell's baseline mean — over the
+`--time-window` years if given, else the whole record (the OHCA-emitter convention). The **spread** is
+the ensemble std of the ABSOLUTE combined field (offset included, matching the OHCA emitter's
+data_yearly_std choice), not of the demeaned anomaly, so it's baseline-window-independent.
 """
 import os
 
+import numpy as np
 import xarray as xr
 
 TERA = 1e12   # TJ/m^2 -> J/m^2
+
+
+def _baseline_mean(field, window):
+    """Per-cell time-mean for the anomaly baseline: over the `--time-window` years (inclusive) if given,
+    else the whole record. `field.time` is days-since-1900 (publish's axis, decode_times=False), so the
+    window years are converted to that scale."""
+    if window is None:
+        return field.mean("time")
+    y0, y1 = window
+    ref = np.datetime64("1900-01-01")
+    lo = float((np.datetime64("%04d-01-01" % y0) - ref) / np.timedelta64(1, "D"))
+    hi = float((np.datetime64("%04d-01-01" % (y1 + 1)) - ref) / np.timedelta64(1, "D"))
+    return field.sel(time=slice(lo, hi)).mean("time")
 
 
 def _to_tlatlon(da):
@@ -79,10 +94,11 @@ def _nansum(das, nfacs):
     return total.where(~all_missing)
 
 
-def combine_level_maps(level, by_tag):
+def combine_level_maps(level, by_tag, window=None):
     """Combine one Level's contributors on the grid.
 
     Returns {name, low, high, anom(time, lat, lon) [J/m^2], sd(time, lat, lon) [J/m^2] or None}.
+    `window` (year0, year1) sets the anomaly baseline; None = whole record.
     """
     missing = [c.tag for c in level.contributors if c.tag not in by_tag]
     if missing:
@@ -91,7 +107,7 @@ def combine_level_maps(level, by_tag):
     nfacs = [c.n_fac for c in level.contributors]
 
     combined = _nansum([c["field"] for c in contribs], nfacs)        # (time, lat, lon) TJ/m^2
-    anom = (combined - combined.mean("time")) * TERA                 # J/m^2, whole-record anomaly
+    anom = (combined - _baseline_mean(combined, window)) * TERA      # J/m^2, baseline-referenced anomaly
 
     sd = None
     if all(c["ens"] is not None for c in contribs):

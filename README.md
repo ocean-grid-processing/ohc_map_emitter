@@ -18,7 +18,7 @@ Per combined layer, on the grid:
 ```
 combined(x,t) = Σᵢ n_facᵢ · fieldᵢ(x,t)     nansum: a missing (NaN) contributor counts as 0,
                                             and a cell where EVERY contributor is NaN → NaN
-ohca(x,t)     = combined(x,t) − mean_t combined(x)         [J/m², whole-record anomaly]
+ohca(x,t)     = combined(x,t) − mean_t∈W combined(x)       [J/m², anomaly; W = --time-window or whole record]
 ohca_std(x,t) = std over members of the combined ABSOLUTE field   [J/m², 1-sigma]
 ```
 
@@ -27,8 +27,9 @@ ohca_std(x,t) = std over members of the combined ABSOLUTE field   [J/m², 1-sigm
   series combine's skipna sum and landing on the GCOS area/volume footprint. The one masking step is
   restoring NaN where *all* contributors are missing (else `nansum` reads land as a spurious 0). No
   shallowest-reference policy — the union footprint equals the shallowest by construction.
-- **Anomaly is the whole-record mean** removed per cell (`OHC − OHC_time_mean`), not a windowed
-  baseline.
+- **Anomaly baseline is per cell**, over the `--time-window` years if given, else the whole record —
+  same option and default as the series emitters (whole-record matches ohca_ohu; pass `2005:2024` to
+  match the gcos convention). The spread is baseline-window-independent (it's of the absolute field).
 - **Spread is of the absolute field**, offset included — same choice as the OHCA emitter
   (`data_yearly_std`), not the demeaned anomaly. So (as there) the value is the anomaly and the
   `_std` is the spread of the absolute; faithful, not obviously symmetric.
@@ -58,19 +59,32 @@ docker container run -v $(pwd):/app ohc_map_emitter:test pytest
 
 ### Run
 ```bash
-python combine.py OHC_*.nc --tag OHC-maps-2026-<run> [--provenance-link URL] [--levels ...] [--out DIR]
+python combine.py OHC_*.nc --tag OHC-maps-2026-<run> --code-version URL \
+    [--time-window 2005:2024] [--provenance-link URL] [--levels ...] [--out DIR]
 ```
 The `OHC_*.nc` are publish submissions built with `--preset wmo --ensemble`; the `OHCENS_` siblings
-must sit beside them for the spread. `--tag` (required) is whitespace-stripped (case preserved, no
-other munging) into each per-level filename and written to the `provenance_tag` header attr;
-`--provenance-link` (optional) becomes the `provenance_link` attr — both pointers to the run's
-provenance record, so the tag must match that record char-for-char.
+must sit beside them for the spread. Each combined level selects the native constituents it needs by
+tag, so you can pass the whole pool — but it must hold **exactly one file per native level** (a
+duplicate tag is a hard error, not a silent last-wins). `--tag` (required) is whitespace-stripped
+(case preserved) into each per-level filename (`ohca_map_<lo>_<hi>_dbar_<window>_<tag>.nc`) and the
+`provenance_tag` attr; `--provenance-link` (optional) becomes `provenance_link`; `--code-version`
+(required) is the exact ohc_map_emitter code, stamped inside `config_record`.
+
+**Provenance.** This step is a fan-in over constituents (a sibling of derive — it reads publish
+directly, so its chain is ingest→publish→map with *no* `ohc_derive` block). It folds the whole chain
+into **one** `config_record` attribute keyed by stage: the constituents' `localgp_ingest_*` /
+`localgp_publish_*` blocks rolled forward and DRY'd into `shared` + `per_constituent`, plus its own
+`ohc_map_emitter` block (`run_config`, `run_facts` with the combined level's contributors + `n_fac` +
+baseline window, `code_version`). One attribute — plus `level`, `period`, `provenance_tag`,
+`provenance_link` — keeps the file at ≤ 8 global attributes, i.e. HDF5 compact storage, so every reader
+opens it (the mask/preset/cp0/rho0 details that used to sit loose now live inside `config_record`).
 
 ## Validation
 
 The gridded map has no Zenodo reference of its own, but it ties back to one that does. The map's
-per-cell referencing is the same whole-record-mean removal as the OHCA emitter's `integral_anom`
-(validated against Zenodo 14720478), applied before the integral instead of after. Demeaning and the
+per-cell referencing is the same baseline-mean removal as the OHCA emitter's `integral_anom` (validated
+against Zenodo 14720478), applied before the integral instead of after — so match the baselines (both
+whole-record, or both the same `--time-window`) when cross-checking. Demeaning and the
 area integral commute, so **area-weighting the map and annualizing must reproduce the OHCA file's
 `ohca` series**:
 
