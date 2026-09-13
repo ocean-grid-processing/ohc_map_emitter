@@ -153,12 +153,8 @@ def build_dataset(blob, tag, provenance_link):
     return out
 
 
-def _window_token(blob):
-    """Year-range token for the filename: the blob's baseline window, or its full record span when
-    windowless — matching the derive filename, so different baselines don't collide here either."""
-    win = blob.attrs.get("time_window", "all")
-    if win and win != "all":
-        return win.replace("-", "_")
+def _data_span(blob):
+    """`YYYY_YYYY` for the years the blob's own axis spans (`year` annual, `time` monthly)."""
     if "year" in blob.coords:
         yrs = blob["year"].values.astype(int)
         return "%d_%d" % (int(yrs.min()), int(yrs.max()))
@@ -168,10 +164,20 @@ def _window_token(blob):
     return "all"
 
 
-def filename(level, tag, window):
-    """Per-level map name: ohca_map_<lo>_<hi>_dbar_<window>_<tag>.nc (low/high from the level)."""
+def _file_token(blob):
+    """Combined filename token `<data>_tw<baseline>`: the blob's own data span, then its baseline
+    window (defaulting to the whole data span when the derive run was windowless) — matching the derive
+    filename, so runs differing only in baseline don't collide here either."""
+    data = _data_span(blob)
+    win = blob.attrs.get("time_window", "all")
+    baseline = data if (not win or win == "all") else win.replace("-", "_")
+    return "%s_tw%s" % (data, baseline)
+
+
+def filename(level, tag, token):
+    """Per-level map name: ohca_map_<lo>_<hi>_dbar_<data>_tw<baseline>_<tag>.nc (low/high from the level)."""
     low, high = level.split("_")
-    return "ohca_map_%s_%s_dbar_%s_%s.nc" % (low, high, window, tag)
+    return "ohca_map_%s_%s_dbar_%s_%s.nc" % (low, high, token, tag)
 
 
 def main():
@@ -188,7 +194,7 @@ def main():
         blob = xr.open_dataset(path)
         if "map" not in blob:
             raise SystemExit("%s carries no map; run ohc_derive with --quantities map" % path)
-        dest = os.path.join(cfg.out, filename(blob.attrs["level"], cfg.tag, _window_token(blob)))
+        dest = os.path.join(cfg.out, filename(blob.attrs["level"], cfg.tag, _file_token(blob)))
         out = build_dataset(blob, cfg.tag, cfg.provenance_link)
         stamp_config_record(out, blob, cfg, path)                  # whole chain -> one config_record attr
         enc = {v: {"_FillValue": -999.0} for v in out.data_vars}   # target fill (NaN -> -999)

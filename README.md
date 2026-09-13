@@ -1,7 +1,7 @@
 # ohc_map_emitter
 
 `ohc_map_emitter` packages one `ohc_derive` blob into a **combined-layer OHC anomaly map** — one
-NetCDF per level, `ohca_map_<lo>_<hi>_dbar_<window>_<tag>.nc`, ME4OH layout, monthly, per grid cell.
+NetCDF per level, `ohca_map_<lo>_<hi>_dbar_<data>_tw<baseline>_<tag>.nc`, ME4OH layout, monthly, per grid cell.
 
 ```
 ohc_ingest ─▶ publish ─▶ ohc_derive (--quantities map) ─▶ ohc_map_emitter ─▶ per-level map .nc
@@ -70,7 +70,7 @@ docker container run -v $(pwd):/app ohc_map_emitter:test pytest
 
 ### Run
 ```bash
-python emit.py derive_<tag>_<window>_<level>.nc [more levels …] --tag <tag> --code-version URL \
+python emit.py derive_<tag>_<data>_tw<baseline>_<level>.nc [more levels …] --tag <tag> --code-version URL \
     [--provenance-link URL] [--out DIR]
 ```
 
@@ -107,8 +107,8 @@ whose entries fully agree collapses to a bare value. Lossless and reversible, dr
 
 | option | default | effect |
 |---|---|---|
-| `derive_*.nc` (positional, 1+) | *(required)* | `ohc_derive` blobs, one per synthetic level (`derive_<tag>_<window>_<level>.nc`). Each must carry `map`. |
-| `--tag` | *(required)* | run token in the filename (`ohca_map_<lo>_<hi>_dbar_<window>_<tag>.nc`) and the `provenance_tag` attr. Used verbatim; should match the tag the blob was derived under. |
+| `derive_*.nc` (positional, 1+) | *(required)* | `ohc_derive` blobs, one per synthetic level (`derive_<tag>_<data>_tw<baseline>_<level>.nc`). Each must carry `map`. |
+| `--tag` | *(required)* | run token in the filename (`ohca_map_<lo>_<hi>_dbar_<data>_tw<baseline>_<tag>.nc`) and the `provenance_tag` attr. Used verbatim; should match the tag the blob was derived under. |
 | `--provenance-link` | *(none)* | URL/path to the provenance record; written to the `provenance_link` attr. |
 | `--code-version` | *(required)* | URL to the exact ohc_map_emitter code (commit/release); stamped inside `config_record`. |
 | `--out` | `.` | output directory (created if absent). |
