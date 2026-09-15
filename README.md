@@ -114,7 +114,7 @@ whose entries fully agree collapses to a bare value. Lossless and reversible, dr
 | `--tag` | *(required)* | run token in the filename (`ohca_map_<tag>_<lo>_<hi>_dbar_<data>_tw<baseline>_<project>_<author>.nc`) and the `provenance_tag` attr. Used verbatim; should match the tag the blob was derived under. |
 | `--provenance-link` | *(none)* | URL/path to the provenance record; written to the `provenance_link` attr. |
 | `--code-version` | *(required)* | URL to the exact ohc_map_emitter code (commit/release); stamped inside `config_record`. |
-| `--project` | *(required)* | project string; first of the filename's trailing pair (whitespace-stripped, case preserved) and recorded in `config_record`. |
+| `--project` | *(required)* | project string; first of the filename's trailing pair (whitespace-stripped, case preserved), a standalone top-level `project` attr, and recorded in `config_record`. |
 | `--author` | *(required)* | author string; last of the filename's trailing pair (e.g. `Giglio_etal2026`) and recorded in `config_record`. |
 | `--citation` | *(required)* | citation sentence; written to the standalone top-level `citation` attr (kept out of `config_record` so it isn't duplicated). |
 | `--out` | `.` | output directory (created if absent). |

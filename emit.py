@@ -127,7 +127,7 @@ def _me4oh(da):
         {"lon": "LONGITUDE", "lat": "LATITUDE", "time": "TIME"})
 
 
-def build_dataset(blob, tag, provenance_link, citation=""):
+def build_dataset(blob, tag, provenance_link, citation="", project=""):
     """A derive `map` blob -> the gridded OHCA anomaly deliverable Dataset, ME4OH layout."""
     window = blob.attrs.get("time_window", "all")
     baseline = "all-time mean" if window == "all" else "%s mean" % window
@@ -152,6 +152,8 @@ def build_dataset(blob, tag, provenance_link, citation=""):
     if provenance_link is not None:
         out.attrs["provenance_link"] = provenance_link
     out.attrs["citation"] = citation
+    if project:
+        out.attrs["project"] = project        # top-level discoverable (also in config_record)
     return out
 
 
@@ -209,7 +211,7 @@ def main():
             raise SystemExit("%s carries no map; run ohc_derive with --quantities map" % path)
         dest = os.path.join(cfg.out, filename(blob.attrs["level"], cfg.tag, _file_token(blob),
                                               cfg.project, cfg.author))
-        out = build_dataset(blob, cfg.tag, cfg.provenance_link, cfg.citation)
+        out = build_dataset(blob, cfg.tag, cfg.provenance_link, cfg.citation, cfg.project)
         stamp_config_record(out, blob, cfg, path)                  # whole chain -> one config_record attr
         enc = {v: {"_FillValue": -999.0} for v in out.data_vars}   # target fill (NaN -> -999)
         enc["TIME"] = {"units": "days since 1900-01-01", "calendar": "proleptic_gregorian"}
