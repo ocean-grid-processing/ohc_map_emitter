@@ -17,7 +17,7 @@ conda activate ohc_crosscheck
 
 cd $SLURM_SUBMIT_DIR
 tag=260908-OP20260507
-project=LocalGP
+product_name=LocalGP
 author=Giglio_etal2026
 citation="Giglio, D., Sukianto, T., Kuusela, M., & Mills, K. (2026). Global Ocean Heat Content Anomalies and Ocean Heat Uptake based on mapping Argo data using local Gaussian processes (Version 4.1.0) [Dataset]. https://doi.org/10.5281/zenodo.22757913"
 results=/scratch/alpine/wimi7695/ohc_prod/results_260908
@@ -30,5 +30,5 @@ python emit.py \
   --tag ${tag} \
   --provenance-link https://github.com/ocean-grid-processing/provenance/blob/main/README.md \
   --code-version https://github.com/ocean-grid-processing/ohc_map_emitter/releases/tag/1.0.0 \
-  --project ${project} --author ${author} --citation "${citation}" \
+  --product-name ${product_name} --author ${author} --citation "${citation}" \
   --out ${results}
